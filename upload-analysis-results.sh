@@ -67,6 +67,25 @@ if ! git status >/dev/null 2>&1; then
     exit 1
 fi
 
+# Git konfigürasyonunu kontrol et ve ayarla
+log_info "Git konfigürasyonu kontrol ediliyor..."
+
+if [[ -z "$(git config user.name)" ]] || [[ -z "$(git config user.email)" ]]; then
+    log_warning "Git kullanıcı bilgileri eksik!"
+    log_info "Otomatik konfigürasyon yapılıyor..."
+    
+    # Hostname'den kullanıcı adı oluştur
+    USER_NAME=$(hostname | cut -d'.' -f1)
+    USER_EMAIL="${USER_NAME}@$(hostname).local"
+    
+    git config user.name "$USER_NAME"
+    git config user.email "$USER_EMAIL"
+    
+    log_success "Git konfigürasyonu ayarlandı:"
+    echo "  👤 User: $USER_NAME"
+    echo "  📧 Email: $USER_EMAIL"
+fi
+
 # ============================================================================
 # 3. YENİ BRANCH OLUŞTUR
 # ============================================================================
