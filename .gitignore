@@ -1,0 +1,76 @@
+# Ubuntu Server Analysis Tools - .gitignore
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Log files
+*.log
+logs/
+/var/log/
+
+# Analysis reports
+/tmp/ubuntu-server-analysis-*.txt
+/tmp/ubuntu-server-analysis-*.json
+
+# Backup files
+/backup/
+*.backup
+*.bak
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Credentials and sensitive data
+*.key
+*.pem
+*.crt
+*.p12
+.env
+secrets.txt
+credentials.txt
+
+# Network configuration backups
+netplan-backup/
+systemd-network-backup/
+
+# 5651 log data
+/var/5651/
+5651-logs.tar.gz
+
+# Package files
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# Test files
+test-*.sh
+debug-*.sh
+
+# Documentation builds
+docs/_build/
+site/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Node modules (if any web tools added later)
+node_modules/
+npm-debug.log*
+
+# Compiled binaries
+*.exe
+*.bin
+*.out 
