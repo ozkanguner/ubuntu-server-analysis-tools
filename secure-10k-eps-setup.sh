@@ -94,55 +94,41 @@ fi
 
 # ============================================================================
 # 2. AĞ YAPILANDIRMASI (NAT ARKASI)
-# ============================================================================
-log_header "2. AĞ YAPILANDIRMASI (NAT ARKASI)"
-echo "======================================"
+# ======================================
+log_info "Ağ yapılandırması..."
 
-log_info "NAT arkası ağ yapılandırması..."
-
-# Statik IP yapılandırması (MikroTik'ten sonra)
-cat > /etc/netplan/01-static-ip.yaml << EOF
+# Statik IP ayarları (10.10.10.251/24)
+NETPLAN_FILE="/etc/netplan/01-netcfg.yaml"
+cat > $NETPLAN_FILE << EOF
 network:
   version: 2
   renderer: networkd
   ethernets:
-    ens33:  # Ana ağ arayüzü
+    ens34:
       dhcp4: no
       addresses:
-        - 192.168.88.100/24  # MikroTik NAT arkası
-      gateway4: 192.168.88.1
+        - 10.10.10.251/24
+      gateway4: 10.10.10.1
       nameservers:
         addresses: [8.8.8.8, 1.1.1.1]
 EOF
+netplan apply
+log_success "Statik IP yapılandırıldı: 10.10.10.251"
 
-log_success "Statik IP yapılandırıldı: 192.168.88.100"
-
-# ============================================================================
 # 3. GÜVENLİK KONFİGÜRASYONU
-# ============================================================================
-log_header "3. GÜVENLİK KONFİGÜRASYONU"
-echo "================================="
-
+# ================================
 log_info "Güvenlik duvarı yapılandırılıyor..."
-
-# UFW kurulumu ve yapılandırması
 apt install -y ufw
-
-# UFW kuralları
 ufw --force reset
 ufw default deny incoming
 ufw default allow outgoing
-
-# Sadece gerekli portlar
-ufw allow in 22/tcp comment "SSH Management"
-ufw allow in 514/udp comment "Syslog UDP (10K EPS)"
-ufw allow in 514/tcp comment "Syslog TCP (10K EPS)"
-ufw allow in proto icmp comment "ICMP Ping"
-
-# UFW'yi etkinleştir
+ufw allow 514/udp
+ufw allow 514/tcp
+ufw allow from 10.10.10.0/24 to any port 514 proto udp
+ufw allow from 10.10.10.0/24 to any port 514 proto tcp
 ufw --force enable
-
-log_success "Güvenlik duvarı yapılandırıldı"
+ufw status verbose
+log_success "UFW kuralları uygulandı."
 
 # ============================================================================
 # 4. 10K EPS PERFORMANS OPTİMİZASYONU
