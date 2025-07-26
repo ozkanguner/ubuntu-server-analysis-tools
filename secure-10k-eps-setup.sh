@@ -97,7 +97,7 @@ fi
 # ======================================
 log_info "Ağ yapılandırması..."
 
-# Statik IP ayarları (10.10.10.251/24)
+# Statik IP ayarları (10.10.10.251/24) - Modern syntax
 NETPLAN_FILE="/etc/netplan/01-netcfg.yaml"
 cat > $NETPLAN_FILE << EOF
 network:
@@ -108,27 +108,24 @@ network:
       dhcp4: no
       addresses:
         - 10.10.10.251/24
-      gateway4: 10.10.10.1
+      routes:
+        - to: default
+          via: 10.10.10.1
       nameservers:
         addresses: [8.8.8.8, 1.1.1.1]
 EOF
+# Dosya izinlerini düzelt
+chmod 600 $NETPLAN_FILE
 netplan apply
 log_success "Statik IP yapılandırıldı: 10.10.10.251"
 
 # 3. GÜVENLİK KONFİGÜRASYONU
 # ================================
-log_info "Güvenlik duvarı yapılandırılıyor..."
-apt install -y ufw
-ufw --force reset
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow 514/udp
-ufw allow 514/tcp
-ufw allow from 10.10.10.0/24 to any port 514 proto udp
-ufw allow from 10.10.10.0/24 to any port 514 proto tcp
-ufw --force enable
-ufw status verbose
-log_success "UFW kuralları uygulandı."
+log_info "Güvenlik yapılandırması (MikroTik firewall kullanılıyor)..."
+# UFW devre dışı (MikroTik firewall yeterli)
+systemctl stop ufw
+systemctl disable ufw
+log_success "UFW devre dışı bırakıldı (MikroTik firewall aktif)"
 
 # ============================================================================
 # 4. 10K EPS PERFORMANS OPTİMİZASYONU
@@ -184,8 +181,6 @@ vm.min_free_kbytes = 1048576
 
 # CPU optimizasyonu (16 core için)
 kernel.sched_autogroup_enabled = 0
-kernel.sched_min_granularity_ns = 1000000
-kernel.sched_wakeup_granularity_ns = 2000000
 EOF
 else
     log_info "Standart 10K EPS kernel parametreleri uygulanıyor..."
