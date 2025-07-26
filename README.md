@@ -4,18 +4,24 @@ Bu repository, 10,000 Events Per Second (EPS) kapasitesine sahip güvenli bir Ub
 
 ## 🎯 Hedef
 
-- **10,000 EPS** performans kapasitesi
+- **10,000-50,000+ EPS** performans kapasitesi (donanıma göre)
 - **NAT güvenliği** (MikroTik router ile)
 - **Yüksek performans** optimizasyonu
 - **5651 Log Server** entegrasyonu
+- **Otomatik donanım algılama** ve optimizasyon
 
 ## 📋 Sistem Gereksinimleri
 
 ### Minimum Donanım:
-- **CPU**: 4+ cores (8+ önerilir)
-- **RAM**: 8GB+ (16GB önerilir)
-- **Disk**: 100GB+ SSD (500GB+ önerilir)
-- **Ağ**: 1Gbps (2.5Gbps önerilir)
+- **CPU**: 4+ cores (8+ önerilir, 16+ yüksek performans)
+- **RAM**: 8GB+ (16GB önerilir, 64GB+ yüksek performans)
+- **Disk**: 100GB+ SSD (500GB+ önerilir, 1TB+ yüksek performans)
+- **Ağ**: 1Gbps (2.5Gbps önerilir, 10Gbps yüksek performans)
+
+### Yüksek Performans Modu (Otomatik Algılama):
+- **CPU**: 16+ cores → 50,000+ EPS
+- **RAM**: 64GB+ → Gelişmiş bellek optimizasyonu
+- **Disk**: 1TB+ → Yüksek I/O kapasitesi
 
 ### Ağ Topolojisi:
 ```

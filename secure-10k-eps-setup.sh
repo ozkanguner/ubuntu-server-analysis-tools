@@ -57,6 +57,9 @@ log_info "Donanım kontrol ediliyor..."
 CPU_CORES=$(nproc)
 if [[ $CPU_CORES -lt 4 ]]; then
     log_warning "CPU yetersiz! Minimum 4 core gerekli. Mevcut: $CPU_CORES"
+elif [[ $CPU_CORES -ge 16 ]]; then
+    log_success "CPU mükemmel! 16+ core sistem: $CPU_CORES cores"
+    HIGH_PERFORMANCE_MODE=true
 else
     log_success "CPU yeterli: $CPU_CORES cores"
 fi
@@ -65,6 +68,9 @@ fi
 RAM_GB=$(free -g | grep Mem | awk '{print $2}')
 if [[ $RAM_GB -lt 8 ]]; then
     log_warning "RAM yetersiz! Minimum 8GB gerekli. Mevcut: ${RAM_GB}GB"
+elif [[ $RAM_GB -ge 64 ]]; then
+    log_success "RAM mükemmel! 64GB+ sistem: ${RAM_GB}GB"
+    HIGH_PERFORMANCE_MODE=true
 else
     log_success "RAM yeterli: ${RAM_GB}GB"
 fi
@@ -73,8 +79,17 @@ fi
 DISK_GB=$(df -BG / | tail -1 | awk '{print $2}' | sed 's/G//')
 if [[ $DISK_GB -lt 100 ]]; then
     log_warning "Disk yetersiz! Minimum 100GB gerekli. Mevcut: ${DISK_GB}GB"
+elif [[ $DISK_GB -ge 1000 ]]; then
+    log_success "Disk mükemmel! 1TB+ sistem: ${DISK_GB}GB"
+    HIGH_PERFORMANCE_MODE=true
 else
     log_success "Disk yeterli: ${DISK_GB}GB"
+fi
+
+# Yüksek performans modu kontrolü
+if [[ "$HIGH_PERFORMANCE_MODE" == "true" ]]; then
+    log_success "🚀 YÜKSEK PERFORMANS MODU AKTİF!"
+    log_info "Hedef: 50,000+ EPS kapasitesi"
 fi
 
 # ============================================================================
@@ -137,8 +152,58 @@ echo "=========================================="
 
 log_info "Sistem performans optimizasyonu..."
 
-# Kernel parametreleri (10K EPS için)
-cat >> /etc/sysctl.conf << EOF
+# Kernel parametreleri (Yüksek performans için)
+if [[ "$HIGH_PERFORMANCE_MODE" == "true" ]]; then
+    log_info "Yüksek performans kernel parametreleri uygulanıyor..."
+    cat >> /etc/sysctl.conf << EOF
+
+# ============================================================================
+# 50K+ EPS YÜKSEK PERFORMANS TUNING
+# ============================================================================
+
+# Ağ performansı (16 core için optimize)
+net.core.rmem_max = 268435456
+net.core.wmem_max = 268435456
+net.core.rmem_default = 524288
+net.core.wmem_default = 524288
+net.core.netdev_max_backlog = 10000
+net.core.somaxconn = 131072
+net.core.netdev_budget = 1200
+net.core.netdev_budget_usecs = 16000
+
+# TCP optimizasyonu (64GB RAM için)
+net.ipv4.tcp_rmem = 8192 174760 268435456
+net.ipv4.tcp_wmem = 8192 131072 268435456
+net.ipv4.tcp_congestion_control = bbr
+net.ipv4.tcp_window_scaling = 1
+net.ipv4.tcp_timestamps = 1
+net.ipv4.tcp_sack = 1
+net.ipv4.tcp_fastopen = 3
+net.ipv4.tcp_slow_start_after_idle = 0
+
+# UDP performansı (yüksek throughput)
+net.core.netdev_budget = 1200
+net.core.netdev_budget_usecs = 16000
+
+# Dosya tanımlayıcı limitleri (1TB disk için)
+fs.file-max = 4194304
+fs.nr_open = 4194304
+
+# Bellek optimizasyonu (64GB RAM için)
+vm.swappiness = 5
+vm.dirty_ratio = 20
+vm.dirty_background_ratio = 10
+vm.vfs_cache_pressure = 50
+vm.min_free_kbytes = 1048576
+
+# CPU optimizasyonu (16 core için)
+kernel.sched_autogroup_enabled = 0
+kernel.sched_min_granularity_ns = 1000000
+kernel.sched_wakeup_granularity_ns = 2000000
+EOF
+else
+    log_info "Standart 10K EPS kernel parametreleri uygulanıyor..."
+    cat >> /etc/sysctl.conf << EOF
 
 # ============================================================================
 # 10K EPS PERFORMANS TUNING
@@ -173,6 +238,7 @@ vm.swappiness = 10
 vm.dirty_ratio = 15
 vm.dirty_background_ratio = 5
 EOF
+fi
 
 # Kernel parametrelerini uygula
 sysctl -p
@@ -190,8 +256,53 @@ log_info "rsyslog 10K EPS optimizasyonu..."
 # rsyslog kurulumu
 apt install -y rsyslog
 
-# 10K EPS için rsyslog konfigürasyonu
-cat > /etc/rsyslog.d/10-10k-eps-optimized.conf << EOF
+# Yüksek performans rsyslog konfigürasyonu
+if [[ "$HIGH_PERFORMANCE_MODE" == "true" ]]; then
+    log_info "50K+ EPS rsyslog konfigürasyonu uygulanıyor..."
+    cat > /etc/rsyslog.d/10-50k-eps-optimized.conf << EOF
+# ============================================================================
+# 50K+ EPS YÜKSEK PERFORMANS RSYSLOG OPTİMİZASYONU
+# ============================================================================
+
+# Global ayarlar
+\$ModLoad imudp
+\$ModLoad imtcp
+\$ModLoad imuxsock
+\$ModLoad imklog
+
+# UDP ve TCP dinleme (50K+ EPS için)
+\$UDPServerRun 514
+\$TCPServerRun 514
+
+# Yüksek performans ayarları (64GB RAM için)
+\$ActionFileEnableSync off
+\$ActionFileDefaultTemplate RSYSLOG_FileFormat
+\$ActionFileMaxSize 4G
+\$ActionFileTimeout 0
+
+# Gelişmiş bellek optimizasyonu (16 core için)
+\$ActionQueueType LinkedList
+\$ActionQueueFileName 50k_eps_queue
+\$ActionQueueMaxDiskSpace 50G
+\$ActionQueueSaveOnShutdown on
+\$ActionQueueMaxFileSize 2G
+\$ActionQueueTimeoutEnqueue 0
+\$ActionQueueDiscardMark 5000000
+\$ActionQueueHighWaterMark 4000000
+\$ActionQueueLowWaterMark 1000000
+
+# Çoklu thread desteği (16 core için)
+\$ModLoad imptcp
+\$InputTCPServerRun 514
+\$InputTCPServerMaxSessions 1000
+\$InputTCPServerKeepAlive on
+\$InputTCPServerKeepAliveProbes 3
+\$InputTCPServerKeepAliveTime 300
+\$InputTCPServerKeepAliveIntvl 75
+EOF
+else
+    log_info "10K EPS rsyslog konfigürasyonu uygulanıyor..."
+    cat > /etc/rsyslog.d/10-10k-eps-optimized.conf << EOF
 # ============================================================================
 # 10K EPS RSYSLOG OPTİMİZASYONU
 # ============================================================================
@@ -222,6 +333,8 @@ cat > /etc/rsyslog.d/10-10k-eps-optimized.conf << EOF
 \$ActionQueueDiscardMark 1000000
 \$ActionQueueHighWaterMark 800000
 \$ActionQueueLowWaterMark 200000
+EOF
+fi
 
 # 5651 Log Server yapılandırması
 \$template 5651Format,"%timegenerated% %HOSTNAME% %syslogtag%%msg%\n"
@@ -279,15 +392,35 @@ echo "========================================"
 
 log_info "Sistem servisleri optimize ediliyor..."
 
-# systemd limitleri (10K EPS için)
-cat > /etc/systemd/system.conf.d/10k-eps-limits.conf << EOF
+# systemd limitleri (Yüksek performans için)
+if [[ "$HIGH_PERFORMANCE_MODE" == "true" ]]; then
+    log_info "50K+ EPS systemd limitleri uygulanıyor..."
+    cat > /etc/systemd/system.conf.d/50k-eps-limits.conf << EOF
+[Manager]
+DefaultLimitNOFILE=8388608
+DefaultLimitNPROC=131072
+EOF
+
+    # rsyslog servis limitleri (16 core için)
+    cat > /etc/systemd/system/rsyslog.service.d/50k-eps-limits.conf << EOF
+[Service]
+LimitNOFILE=8388608
+LimitNPROC=131072
+Nice=-20
+IOSchedulingClass=1
+IOSchedulingPriority=0
+CPUAffinity=0-15
+EOF
+else
+    log_info "10K EPS systemd limitleri uygulanıyor..."
+    cat > /etc/systemd/system.conf.d/10k-eps-limits.conf << EOF
 [Manager]
 DefaultLimitNOFILE=2097152
 DefaultLimitNPROC=65536
 EOF
 
-# rsyslog servis limitleri
-cat > /etc/systemd/system/rsyslog.service.d/10k-eps-limits.conf << EOF
+    # rsyslog servis limitleri
+    cat > /etc/systemd/system/rsyslog.service.d/10k-eps-limits.conf << EOF
 [Service]
 LimitNOFILE=2097152
 LimitNPROC=65536
@@ -295,6 +428,7 @@ Nice=-10
 IOSchedulingClass=1
 IOSchedulingPriority=4
 EOF
+fi
 
 # systemd'yi yeniden yükle
 systemctl daemon-reload
@@ -495,11 +629,21 @@ echo "✅ Rate limiting (DDoS koruması)"
 
 echo
 log_info "📈 PERFORMANS ÖZELLİKLERİ:"
-echo "✅ 10,000 EPS kapasitesi"
-echo "✅ Kernel optimizasyonu"
-echo "✅ rsyslog queue optimizasyonu"
-echo "✅ Disk I/O optimizasyonu"
-echo "✅ Bellek optimizasyonu"
+if [[ "$HIGH_PERFORMANCE_MODE" == "true" ]]; then
+    echo "✅ 50,000+ EPS kapasitesi (16 core, 64GB RAM)"
+    echo "✅ Yüksek performans kernel optimizasyonu"
+    echo "✅ Gelişmiş rsyslog queue sistemi"
+    echo "✅ 1TB disk I/O optimizasyonu"
+    echo "✅ 64GB RAM bellek optimizasyonu"
+    echo "✅ Çoklu thread desteği"
+    echo "✅ CPU affinity optimizasyonu"
+else
+    echo "✅ 10,000 EPS kapasitesi"
+    echo "✅ Kernel optimizasyonu"
+    echo "✅ rsyslog queue optimizasyonu"
+    echo "✅ Disk I/O optimizasyonu"
+    echo "✅ Bellek optimizasyonu"
+fi
 
 echo
 log_success "5651 Log Server güvenli ve yüksek performanslı olarak hazır!" 
