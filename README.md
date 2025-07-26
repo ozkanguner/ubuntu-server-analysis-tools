@@ -1,166 +1,199 @@
-# 🔍 Ubuntu Sunucu Analiz Araçları
+# 🔒 Güvenli 10K EPS Ubuntu Server Kurulumu
 
-Bu repository, Ubuntu sunucularının kapsamlı analizi ve 5651 Log Server performans optimizasyonu için geliştirilmiş araçları içerir.
+Bu repository, 10,000 Events Per Second (EPS) kapasitesine sahip güvenli bir Ubuntu Log Server kurulumu için geliştirilmiştir.
 
-## 📋 İçerik
+## 🎯 Hedef
 
-### 1. `ubuntu-server-analyzer.sh`
-Kapsamlı Ubuntu sunucu analiz scripti:
-- **Sistem bilgileri** (CPU, RAM, Disk)
-- **Ağ yapılandırması** (PPPoE, IP adresleri, routing)
-- **Servis durumları** (systemd-networkd, rsyslog, SSH)
-- **Firewall ve güvenlik** (UFW, açık portlar)
-- **5651 Log Server analizi** (log dosyaları, performans)
-- **Performans metrikleri** (CPU, bellek, disk I/O)
-- **Sistem logları** (journalctl, PPPoE, rsyslog)
-- **JSON formatında özet rapor**
+- **10,000 EPS** performans kapasitesi
+- **NAT güvenliği** (MikroTik router ile)
+- **Yüksek performans** optimizasyonu
+- **5651 Log Server** entegrasyonu
 
-### 2. `ubuntu-pppoe-migration.sh`
-PPPoE direkt bağlantı migration scripti:
-- **MikroTik NAT'tan direkt PPPoE'ye geçiş**
-- **Zero NAT overhead** ile 10K EPS performansı
-- **Otomatik yeniden bağlanma** ve monitoring
-- **Dual interface** yapılandırması
-- **Firewall optimizasyonu**
+## 📋 Sistem Gereksinimleri
 
-## 🚀 Kurulum ve Kullanım
+### Minimum Donanım:
+- **CPU**: 4+ cores (8+ önerilir)
+- **RAM**: 8GB+ (16GB önerilir)
+- **Disk**: 100GB+ SSD (500GB+ önerilir)
+- **Ağ**: 1Gbps (2.5Gbps önerilir)
 
-### Analiz Scripti Çalıştırma
+### Ağ Topolojisi:
+```
+[Internet] → [MikroTik Router] → [Ubuntu 5651 Server]
+                (NAT + Firewall)     (10K EPS)
+```
 
+## 🚀 Hızlı Kurulum
+
+### 1. Ubuntu Server Kurulumu:
 ```bash
+# Ubuntu 22.04 LTS Server
+- Minimal kurulum
+- SSH server dahil
+- Güvenlik duvarı: Hayır (manuel yapılandırma)
+```
+
+### 2. Script'i İndirin:
+```bash
+# Repository'yi klonlayın
+git clone https://github.com/ozkanguner/ubuntu-server-analysis-tools.git
+cd ubuntu-server-analysis-tools
+
 # Script'i çalıştırılabilir yapın
-chmod +x ubuntu-server-analyzer.sh
+chmod +x secure-10k-eps-setup.sh
 
-# Analizi başlatın
-sudo ./ubuntu-server-analyzer.sh
+# Kurulumu başlatın
+sudo ./secure-10k-eps-setup.sh
 ```
 
-### PPPoE Migration
+## 📁 Kurulum İçeriği
 
+### Otomatik Yapılandırmalar:
+- ✅ **Ağ yapılandırması** (192.168.88.100)
+- ✅ **Güvenlik duvarı** (UFW)
+- ✅ **Kernel optimizasyonu** (10K EPS için)
+- ✅ **rsyslog optimizasyonu** (Queue sistemi)
+- ✅ **Sistem servisleri** (systemd limitleri)
+- ✅ **Monitoring** (otomatik log takibi)
+- ✅ **Log rotation** (disk yönetimi)
+
+### Oluşturulan Dizinler:
+```
+/var/5651/
+├── mikrotik/          # MikroTik logları
+├── other-devices/     # Diğer cihaz logları
+└── default/          # Varsayılan loglar
+```
+
+## 🔧 MikroTik Router Konfigürasyonu
+
+Kurulum sonrası `/root/mikrotik-config.txt` dosyasında detaylı talimatlar bulunur:
+
+### Temel Konfigürasyon:
 ```bash
-# Migration script'ini çalıştırılabilir yapın
-chmod +x ubuntu-pppoe-migration.sh
+# Ağ yapılandırması
+/ip address add address=192.168.88.1/24 interface=ether2
 
-# Migration'ı başlatın (DİKKAT: Mevcut ağ yapılandırmasını değiştirir)
-sudo ./ubuntu-pppoe-migration.sh
+# NAT konfigürasyonu
+/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade
+
+# Port forwarding (10K EPS için)
+/ip firewall nat add chain=dstnat protocol=udp dst-port=514 action=dst-nat to-addresses=192.168.88.100 to-ports=514
+
+# Log yönlendirme
+/tool logging add action=remote topics=info,debug remote=192.168.88.100:514
 ```
 
-## 📊 Çıktılar
+## 📊 Performans Özellikleri
 
-### Analiz Raporu
-- **Metin raporu**: `/tmp/ubuntu-server-analysis-YYYYMMDD-HHMMSS.txt`
-- **JSON raporu**: `/tmp/ubuntu-server-analysis-YYYYMMDD-HHMMSS.json`
+### 10K EPS Optimizasyonları:
+- **Kernel parametreleri**: TCP/UDP buffer optimizasyonu
+- **rsyslog queue**: LinkedList queue sistemi
+- **Disk I/O**: SSD optimizasyonu
+- **Bellek**: Swappiness ve dirty ratio ayarları
+- **Ağ**: BBR congestion control
 
-### Örnek JSON Çıktısı
-```json
-{
-  "analysis_timestamp": "2024-01-15T10:30:00+03:00",
-  "system_info": {
-    "hostname": "ubuntu-server",
-    "kernel": "5.15.0-91-generic",
-    "architecture": "x86_64"
-  },
-  "hardware": {
-    "cpu_cores": 8,
-    "memory_total": "16G",
-    "disk_usage": "45%"
-  },
-  "network": {
-    "external_ip": "92.113.43.132",
-    "pppoe_active": true
-  },
-  "5651_log_server": {
-    "directory_exists": true,
-    "log_files_count": 1250,
-    "total_size": "2.5G"
-  }
-}
-```
+### Güvenlik Özellikleri:
+- **NAT koruması**: MikroTik router
+- **Firewall**: UFW kuralları
+- **Port forwarding**: Sadece gerekli portlar
+- **Rate limiting**: DDoS koruması
 
-## 🎯 Hedefler
+## 🧪 Test ve Doğrulama
 
-### Performans Optimizasyonu
-- **10K EPS** (Events Per Second) kapasitesi
-- **Zero NAT overhead** ile direkt ISP bağlantısı
-- **Otomatik failover** ve monitoring
-- **Gerçek zamanlı** performans takibi
-
-### Güvenlik
-- **UFW firewall** yapılandırması
-- **SSH güvenliği** (port 22)
-- **Syslog portları** (514 UDP/TCP)
-- **ICMP kontrolü** (ping)
-
-## 🔧 Sistem Gereksinimleri
-
-- **Ubuntu 20.04+** (LTS önerilir)
-- **Bash shell**
-- **sudo yetkileri**
-- **PPPoE bağlantısı** (migration için)
-- **Minimum 4GB RAM**
-- **SSD disk** (performans için)
-
-## 📈 Monitoring ve Bakım
-
-### Otomatik Monitoring
+### Kurulum Sonrası Testler:
 ```bash
-# PPPoE monitoring servisi
-systemctl status pppoe-monitor
+# Ağ bağlantısı
+ping 192.168.88.1
 
-# Log takibi
-tail -f /var/log/pppoe-monitor.log
+# rsyslog servisi
+systemctl status rsyslog
 
-# Performans izleme
-/opt/5651-monitoring/live-stats.sh
-```
-
-### Manuel Kontroller
-```bash
-# PPPoE durumu
-ip addr show ppp0
-
-# Servis durumları
-systemctl status systemd-networkd rsyslog ssh
-
-# Disk kullanımı
-df -h /var/5651/
-
-# Açık portlar
+# Port dinleme
 ss -tulpn | grep :514
+
+# Test mesajı
+logger -n 192.168.88.100 -P 514 "Test message"
+
+# Log kontrolü
+ls -la /var/5651/
+tail -f /var/5651/mikrotik/$(date +%Y-%m-%d).log
 ```
 
-## 🚨 Önemli Notlar
+### Monitoring:
+```bash
+# Performans monitoring
+tail -f /var/log/5651-monitoring.log
 
-### Migration Öncesi
-- **Yedek alın**: `/backup/migration-YYYYMMDD-HHMMSS/`
-- **PPPoE bilgilerini** doğrulayın
-- **Ağ bağlantısını** test edin
-- **Kritik servisleri** durdurun
+# Sistem durumu
+htop
+df -h /var/5651
+```
 
-### Güvenlik
-- **Firewall kurallarını** gözden geçirin
-- **SSH erişimini** koruyun
-- **Log dosyalarını** düzenli temizleyin
-- **Performans metriklerini** izleyin
+## 📈 Performans Metrikleri
 
-## 🤝 Katkıda Bulunma
+### Beklenen Performans:
+- **10,000 EPS** kapasitesi
+- **< 1ms** gecikme
+- **99.9%** uptime
+- **Otomatik** log rotation
+- **Gerçek zamanlı** monitoring
 
-1. Repository'yi fork edin
-2. Feature branch oluşturun (`git checkout -b feature/yeni-ozellik`)
-3. Değişikliklerinizi commit edin (`git commit -am 'Yeni özellik eklendi'`)
-4. Branch'inizi push edin (`git push origin feature/yeni-ozellik`)
-5. Pull Request oluşturun
+### Disk Kullanımı:
+- **Günlük**: ~1-5GB (log boyutuna göre)
+- **Aylık**: ~30-150GB
+- **Yıllık**: ~365-1825GB
 
-## 📝 Lisans
+## 🔍 Sorun Giderme
 
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakın.
+### Yaygın Sorunlar:
+
+#### rsyslog Başlamıyor:
+```bash
+# Konfigürasyon kontrolü
+rsyslogd -N1
+
+# Servis durumu
+systemctl status rsyslog
+
+# Log kontrolü
+journalctl -u rsyslog
+```
+
+#### Ağ Bağlantısı Yok:
+```bash
+# IP kontrolü
+ip addr show
+
+# Gateway kontrolü
+ip route show
+
+# DNS kontrolü
+nslookup google.com
+```
+
+#### Performans Düşük:
+```bash
+# Kernel parametreleri
+sysctl -a | grep net.core
+
+# rsyslog queue durumu
+ss -tulpn | grep :514
+
+# Disk I/O
+iostat -x 1 3
+```
 
 ## 📞 Destek
 
 - **Issues**: GitHub Issues kullanın
 - **Dokümantasyon**: Bu README dosyasını inceleyin
-- **Loglar**: `/var/log/pppoe-monitor.log` ve `/var/log/syslog`
+- **Loglar**: `/var/log/5651-monitoring.log`
+
+## 📝 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakın.
 
 ---
 
-**🎉 5651 Log Server performans optimizasyonu için geliştirilmiştir!** 
+**🎉 10K EPS kapasitesi ile güvenli ve yüksek performanslı Log Server hazır!** 
